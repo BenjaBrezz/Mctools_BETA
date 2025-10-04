@@ -1,0 +1,12 @@
+{
+  "name": "asistente-programacion-servidor",
+  "version": "1.0.0",
+  "description": "Servidor backend para la sincronización de datos del asistente de programación.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
