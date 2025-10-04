@@ -31,6 +31,21 @@ app.use((req, res, next) => {
     next();
 });
 
+// server.js (Middleware de CORS)
+app.use((req, res, next) => {
+    // Permitir acceso desde CUALQUIER origen (*)
+    res.header('Access-Control-Allow-Origin', '*');
+    // Permitir los métodos que usaremos
+    res.header('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
+    // Permitir el encabezado Content-Type
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Manejar la petición OPTIONS previa al PUT (solicitud preflight)
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
 
 // Ruta del archivo JSON que funciona como nuestra 'base de datos'
 const DATA_FILE = path.join(__dirname, 'datos.json');
