@@ -96,6 +96,10 @@ app.put('/api/datos/:id', async (req, res) => {
     }
 });
 
+// Ruta de "saludo" o estado para confirmar que el servidor está vivo.
+app.get('/', (req, res) => {
+    res.send('Servidor del Asistente de Programación (API) Activo. Use /api/datos para acceder a los datos.');
+});
 
 // Iniciar el servidor
 app.listen(PORT, () => {
