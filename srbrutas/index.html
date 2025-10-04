@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asistente de Agrupación</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <aside id="sidebar">
+        <button id="crear-grupo-flotante" title="Crear Nuevo Grupo">+</button>
+
+        <h2>Grupos</h2>
+        <div id="grupo-botones">
+        </div>
+
+    </aside>
+
+    <main id="main-content">
+
+        <h2>Datos Disponibles</h2>
+        <div id="tabla-contenedor">
+
+            <input type="text" id="busqueda" placeholder="Buscar en seleccionados...">
+
+            <table id="tabla">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Dirección</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-tbody">
+                </tbody>
+            </table>
+        </div>
+
+        <hr>
+
+        <div id="seleccionados-area">
+            <h2>
+                Seleccionados y Agrupados
+            </h2>
+
+            <button onclick="copiarAlPortapapeles()">
+                📋 Copiar al Portapapeles
+            </button>
+
+            <div id="seleccionados">
+                <p>Selecciona elementos para empezar a agrupar.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="modal-grupo">
+        <div class="modal-content">
+            <h3>Nombrar Nuevo Grupo</h3>
+            <input type="text" id="input-modal-grupo" placeholder="Nombre del grupo">
+            <div>
+                <button onclick="cerrarModalGrupo()">Cancelar</button>
+                <button onclick="confirmarCrearGrupo()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notificacion-toast" class="toast-oculto">
+        <span id="toast-icono"></span>
+        <span id="toast-mensaje"></span>
+    </div>
+
+    <div id="modal-confirmacion" class="modal">
+        <div class="modal-contenido">
+            <h3 id="confirmacion-titulo">Confirmar Acción</h3>
+            <p id="confirmacion-mensaje">¿Estás seguro de que deseas realizar esta acción?</p>
+            <div class="modal-botones">
+                <button id="btn-cancelar" class="btn-secundario">Cancelar</button>
+                <button id="btn-confirmar" class="btn-peligro">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
