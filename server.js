@@ -1,122 +1,117 @@
-// server.js
-
-// Dependencias
 const express = require('express');
-// Usamos fs/promises para trabajar de forma asíncrona (necesario en un servidor)
-const fs = require('fs/promises');
+const fs = require('fs');
 const path = require('path');
+
 const app = express();
-// Render asignará un puerto dinámico a través de process.env.PORT
 const PORT = process.env.PORT || 3000;
-
-// Middleware para procesar JSON en el cuerpo de las peticiones (PUT)
-app.use(express.json());
-
-// =================================================================
-// MIDDLEWARE DE SEGURIDAD (CORS)
-// Necesario para que GitHub Pages pueda hablar con Render
-// =================================================================
-app.use((req, res, next) => {
-    // Permitir acceso desde CUALQUIER origen (*)
-    res.header('Access-Control-Allow-Origin', '*');
-    // Permitir los métodos HTTP que usaremos
-    res.header('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
-    // Permitir el encabezado Content-Type
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-
-    // Manejar la petición OPTIONS previa al PUT (solicitud preflight)
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
-});
-
-// server.js (Middleware de CORS)
-app.use((req, res, next) => {
-    // Permitir acceso desde CUALQUIER origen (*)
-    res.header('Access-Control-Allow-Origin', '*');
-    // Permitir los métodos que usaremos
-    res.header('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
-    // Permitir el encabezado Content-Type
-    res.header('Access-Control-Allow-Headers', 'Content-Type');
-
-    // Manejar la petición OPTIONS previa al PUT (solicitud preflight)
-    if (req.method === 'OPTIONS') {
-        return res.sendStatus(200);
-    }
-    next();
-});
-
-// Ruta del archivo JSON que funciona como nuestra 'base de datos'
 const DATA_FILE = path.join(__dirname, 'datos.json');
 
+// Middleware para parsear JSON en el cuerpo de las peticiones (PUT)
+app.use(express.json());
 
-// =================================================================
-// 1. RUTA GET /api/datos: Leer todos los datos al cargar la app
-// =================================================================
-app.get('/api/datos', async (req, res) => {
-    try {
-        // Leer el archivo de forma asíncrona
-        const data = await fs.readFile(DATA_FILE, 'utf8');
-        res.json(JSON.parse(data));
-    } catch (error) {
-        console.error("Error al leer datos:", error);
-        // Si el archivo falla o no existe, devolvemos un array vacío para no bloquear el frontend
-        res.status(200).json([]);
+// ====================================================================
+// CONFIGURACIÓN DE CORS (Cross-Origin Resource Sharing)
+// NECESARIO para que GitHub Pages pueda comunicarse con Render
+// ====================================================================
+app.use((req, res, next) => {
+    // Permitir acceso desde CUALQUIER origen (*)
+    res.header('Access-Control-Allow-Origin', '*');
+
+    // Permitir los métodos que usaremos (GET para leer, PUT para actualizar)
+    res.header('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS');
+
+    // Permitir el encabezado Content-Type (necesario para la petición PUT)
+    res.header('Access-Control-Allow-Headers', 'Content-Type');
+
+    // Manejar la solicitud "preflight" de OPTIONS, necesaria antes del PUT
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
     }
+    next();
 });
 
+// ====================================================================
+// 1. RUTA DE SALUDO O ESTADO (GET /)
+// Responde a la ruta base para evitar el error "Cannot GET /"
+// ====================================================================
+app.get('/', (req, res) => {
+    res.send('Servidor del Asistente de Programación (API) Activo. Use /api/datos para acceder a la base de datos.');
+});
 
-// =================================================================
-// 2. RUTA PUT /api/datos/:id: Guardar una corrección
-// =================================================================
-app.put('/api/datos/:id', async (req, res) => {
-    const idToUpdate = parseInt(req.params.id);
+// ====================================================================
+// 2. RUTA PARA OBTENER TODOS LOS DATOS (GET /api/datos)
+// ====================================================================
+app.get('/api/datos', (req, res) => {
+    fs.readFile(DATA_FILE, 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            // Si el archivo no se encuentra, devuelve un array vacío
+            return res.status(500).json([]);
+        }
+        try {
+            // Devuelve el JSON parseado (el array de datos)
+            res.json(JSON.parse(data));
+        } catch (e) {
+            console.error("Error al parsear datos.json:", e);
+            res.status(500).json([]);
+        }
+    });
+});
+
+// ====================================================================
+// 3. RUTA PARA ACTUALIZAR UN SOLO DATO (PUT /api/datos/:id)
+// Requiere: { campo: 'nombre' o 'direccion', valor: 'nuevo valor' }
+// ====================================================================
+app.put('/api/datos/:id', (req, res) => {
+    const itemId = parseInt(req.params.id);
     const { campo, valor } = req.body;
 
-    // Validación básica de la entrada
-    if (isNaN(idToUpdate) || !campo || typeof valor === 'undefined') {
-        return res.status(400).json({ error: 'Datos de entrada inválidos.' });
-    }
+    fs.readFile(DATA_FILE, 'utf8', (err, data) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error al leer la base de datos.');
+        }
 
-    try {
-        // 1. Leer los datos actuales del archivo
-        const dataStr = await fs.readFile(DATA_FILE, 'utf8');
-        let datos = JSON.parse(dataStr);
+        let datos;
+        try {
+            datos = JSON.parse(data);
+        } catch (e) {
+            console.error("Error al parsear JSON:", e);
+            return res.status(500).send('Error de formato en la base de datos.');
+        }
 
-        // 2. Encontrar el elemento por ID
-        const itemIndex = datos.findIndex(item => item.id === idToUpdate);
+        // 1. Encontrar el índice del elemento
+        const itemIndex = datos.findIndex(item => item.id === itemId);
 
         if (itemIndex === -1) {
-            return res.status(404).json({ error: 'Elemento no encontrado.' });
+            return res.status(404).send('Elemento no encontrado.');
         }
 
-        // 3. Aplicar la actualización SÓLO a campos permitidos
-        if (['nombre', 'direccion'].includes(campo)) {
-            datos[itemIndex][campo] = valor;
-        } else {
-            return res.status(400).json({ error: `Campo '${campo}' no es editable.` });
+        // 2. Validar el campo y el valor a actualizar
+        // ¡Se valida que el campo sea 'nombre' o 'direccion' en MINÚSCULA!
+        if (!['nombre', 'direccion'].includes(campo)) {
+            return res.status(400).send('Campo de actualización inválido.');
         }
 
-        // 4. Escribir los datos actualizados de vuelta al archivo (PERSISTENCIA)
-        // Usamos 'null, 2' para formatear el JSON de forma legible
-        await fs.writeFile(DATA_FILE, JSON.stringify(datos, null, 2), 'utf8');
+        // 3. Aplicar la actualización
+        datos[itemIndex][campo] = valor;
 
-        // 5. Confirmar éxito
-        res.status(200).json({ mensaje: 'Dato actualizado exitosamente.' });
+        // 4. Escribir el array completo de vuelta al archivo
+        fs.writeFile(DATA_FILE, JSON.stringify(datos, null, 2), 'utf8', (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send('Error al guardar los datos.');
+            }
 
-    } catch (error) {
-        console.error("Error al actualizar y escribir datos:", error);
-        res.status(500).json({ error: 'Error interno del servidor al guardar.' });
-    }
+            // Éxito: devuelve el elemento actualizado (opcional)
+            res.json(datos[itemIndex]);
+        });
+    });
 });
 
-// Ruta de "saludo" o estado para confirmar que el servidor está vivo.
-app.get('/', (req, res) => {
-    res.send('Servidor del Asistente de Programación (API) Activo. Use /api/datos para acceder a los datos.');
-});
-
-// Iniciar el servidor
+// ====================================================================
+// INICIO DEL SERVIDOR
+// ====================================================================
 app.listen(PORT, () => {
-    console.log(`Servidor iniciado en el puerto: ${PORT}`);
+    console.log(`Servidor escuchando en el puerto ${PORT}`);
 });
