@@ -2,7 +2,7 @@
 // CONFIGURACIÓN DE LA API (BACKEND EN RENDER)
 // ¡IMPORTANTE! Reemplaza esta URL con la que Render te asignó.
 // ====================================================================
-const RENDER_API_URL = "https://TU-URL-DE-RENDER.onrender.com/api/datos";
+const RENDER_API_URL = "https://mctools-beta-1.onrender.com";
 
 
 // ====================================================================
