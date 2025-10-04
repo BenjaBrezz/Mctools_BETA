@@ -1,6 +1,6 @@
 // ====================================================================
 // CONFIGURACIÓN DE LA API (BACKEND EN RENDER)
-// ¡IMPORTANTE! Reemplaza esta URL con la que Render te asignó.
+// ¡REEMPLAZA ESTA URL con la que Render te asignó!
 // ====================================================================
 const RENDER_API_URL = "https://mctools-beta-1.onrender.com";
 
@@ -9,15 +9,16 @@ const RENDER_API_URL = "https://mctools-beta-1.onrender.com";
 // PARTE 1: DATOS Y VARIABLES GLOBALES
 // ====================================================================
 
-// Datos ahora es una variable que se llenará de forma asíncrona desde la API
+// Datos se llena de forma asíncrona desde la API
 let datos = [];
 
-// Elementos del DOM (Se mantienen igual)
+// Elementos del DOM
 const tbody = document.querySelector("#tabla tbody");
 const seleccionadosDiv = document.getElementById("seleccionados");
 const busquedaInput = document.getElementById("busqueda");
 const modalGrupo = document.getElementById("modal-grupo");
 const inputModalGrupo = document.getElementById("input-modal-grupo");
+const nuevoGrupoInput = document.getElementById("nuevo-grupo"); // Asegúrate de que este ID exista en tu HTML
 
 // REFERENCIAS PARA EL TOAST DE NOTIFICACIÓN
 const notificacionToast = document.getElementById("notificacion-toast");
@@ -36,15 +37,14 @@ const btnCancelar = document.getElementById("btn-cancelar");
 let grupoActivo = "Grupo 1";
 let grupos = ["Grupo 1", "Grupo 2", "Grupo 3"];
 let grupoEditando = null;
-let seleccionGeneral = []; // ALMACENA IDs
-let elementoGrupos = {}; // LAS CLAVES SON IDs
+let seleccionGeneral = []; // ALMACENA IDs de los elementos
+let elementoGrupos = {}; // LAS CLAVES SON IDs, guarda a qué grupos pertenece
 let accionConfirmarCallback = () => { };
 
 
 // FUNCIÓN AUXILIAR: busca un objeto de datos por su ID
 function encontrarItemPorId(id) {
     const idNum = Number(id);
-    // Busca en el array 'datos' que se cargó desde la API
     return datos.find(item => item.id === idNum);
 }
 
@@ -53,6 +53,9 @@ function encontrarItemPorId(id) {
 // PARTE 1B: GESTIÓN DE PERSISTENCIA (localStorage)
 // ====================================================================
 
+/**
+ * Guarda el estado actual de las variables clave en localStorage.
+ */
 function guardarEstado() {
     try {
         const estado = {
@@ -67,6 +70,9 @@ function guardarEstado() {
     }
 }
 
+/**
+ * Carga el estado guardado en localStorage al iniciar la aplicación.
+ */
 function cargarEstado() {
     try {
         const estadoGuardado = localStorage.getItem('asistenteProgramacionEstado');
@@ -93,6 +99,9 @@ function cargarEstado() {
 // PARTE 2: GESTIÓN DE NOTIFICACIONES Y CONFIRMACIÓN
 // ====================================================================
 
+/**
+ * Muestra una notificación personalizada interna (Toast).
+ */
 function mostrarNotificacion(mensaje, tipo = 'info') {
     if (!notificacionToast || !toastMensaje || !toastIcono) return;
 
@@ -121,6 +130,9 @@ function mostrarNotificacion(mensaje, tipo = 'info') {
     }, 3500);
 }
 
+/**
+ * Muestra el modal de confirmación personalizado.
+ */
 function mostrarConfirmacion(titulo, mensaje, callback) {
     confirmacionTitulo.textContent = titulo;
     confirmacionMensaje.textContent = mensaje;
@@ -128,6 +140,9 @@ function mostrarConfirmacion(titulo, mensaje, callback) {
     modalConfirmacion.style.display = 'flex';
 }
 
+/**
+ * Configurar los eventos de clic del modal de confirmación.
+ */
 function inicializarConfirmacionModal() {
     btnConfirmar.onclick = () => {
         modalConfirmacion.style.display = 'none';
@@ -152,6 +167,7 @@ window.alternarSeleccionGeneral = function (id) {
     const idStr = String(id);
 
     if (itemIdIndex === -1) {
+        // Añadir elemento
         seleccionGeneral.push(id);
 
         if (!elementoGrupos[idStr]) {
@@ -159,6 +175,7 @@ window.alternarSeleccionGeneral = function (id) {
         }
 
     } else {
+        // Quitar elemento
         seleccionGeneral.splice(itemIdIndex, 1);
         if (elementoGrupos[idStr]) {
             delete elementoGrupos[idStr];
@@ -181,10 +198,11 @@ window.setGrupo = function (nombre) {
 }
 
 window.crearGrupo = function () {
-    const nombre = nuevoGrupoInput.value.trim();
+    const inputElement = document.getElementById("input-modal-grupo") || nuevoGrupoInput;
+    const nombre = inputElement.value.trim();
     if (nombre && !grupos.includes(nombre)) {
         grupos.push(nombre);
-        nuevoGrupoInput.value = "";
+        inputElement.value = "";
         setGrupo(nombre);
         mostrarNotificacion(`Grupo "${nombre}" creado con éxito.`, 'exito');
     } else if (nombre) {
@@ -256,6 +274,9 @@ window.reordenarGrupos = function (origen, destino) {
 // PARTE 5: RENDERIZADO DE UI Y LÓGICA DE API (Guardado)
 // ====================================================================
 
+/**
+ * Centraliza la actualización de la UI y guarda el estado.
+ */
 function actualizarVistas() {
     renderGrupos();
     renderSeleccionados();
@@ -268,7 +289,7 @@ function actualizarVistas() {
  */
 window.guardarEdicionDato = async function (id, campo, nuevoValor) {
     const item = encontrarItemPorId(id);
-    nuevoValor = nuevoValor.trim(); // Limpieza de espacios
+    nuevoValor = nuevoValor.trim();
 
     if (!item || item[campo] === nuevoValor) return;
 
@@ -277,7 +298,7 @@ window.guardarEdicionDato = async function (id, campo, nuevoValor) {
 
     try {
         const response = await fetch(`${RENDER_API_URL}/${id}`, {
-            method: 'PUT', // Usamos PUT para actualizar el recurso
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -291,7 +312,7 @@ window.guardarEdicionDato = async function (id, campo, nuevoValor) {
             throw new Error(`Error ${response.status}: El servidor no pudo guardar el cambio.`);
         }
 
-        // El servidor respondió OK: cambio permanente.
+        // El servidor respondió OK: cambio permanente y sincronizado.
         mostrarNotificacion(`Edición de ${campo} guardada permanentemente.`, 'exito');
 
     } catch (error) {
@@ -303,14 +324,26 @@ window.guardarEdicionDato = async function (id, campo, nuevoValor) {
 
 /**
  * Inicializa la tabla con los datos de la API. Celdas EDITABLES.
+ * ESTA ES LA FUNCIÓN CLAVE QUE DIBUJA LOS DATOS DE LA API EN LA TABLA.
  */
 function renderTablaInicial() {
     tbody.innerHTML = "";
     const filtro = busquedaInput.value.toLowerCase();
 
+    // Si no hay datos (porque el fetch falló o están vacíos), muestra un mensaje
+    if (datos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3">No se encontraron datos. Intente recargar.</td></tr>';
+        return;
+    }
+
+    // Iterar sobre el array global 'datos' para renderizar las filas
     datos.forEach(item => {
         const id = item.id;
-        const textoCompleto = `${item.nombre} ${item.direccion}`.toLowerCase();
+        // Asegurarse de que 'item' tiene los campos 'nombre' y 'direccion'
+        const nombre = item.nombre || '';
+        const direccion = item.direccion || '';
+
+        const textoCompleto = `${nombre} ${direccion}`.toLowerCase();
 
         if (!filtro || textoCompleto.includes(filtro)) {
             const fila = document.createElement("tr");
@@ -318,11 +351,11 @@ function renderTablaInicial() {
             fila.innerHTML = `
                 <td contenteditable="true" 
                     onblur="guardarEdicionDato(${id}, 'nombre', this.textContent)">
-                    ${item.nombre}
+                    ${nombre}
                 </td>
                 <td contenteditable="true" 
                     onblur="guardarEdicionDato(${id}, 'direccion', this.textContent)">
-                    ${item.direccion}
+                    ${direccion}
                 </td>
                 <td><button onclick="alternarSeleccionGeneral(${id})">Seleccionar</button></td>
             `;
@@ -432,7 +465,6 @@ function renderGrupos() {
         const esEditando = nombre === grupoEditando;
 
         if (esEditando) {
-            // ... (HTML para el modo edición) ...
             return `
                 <div class="grupo-item grupo-editando">
                     <input type="text" id="input-renombrar" value="${nombre}">
@@ -441,7 +473,6 @@ function renderGrupos() {
                 </div>
             `;
         } else {
-            // ... (HTML para el modo normal) ...
             return `
                 <div class="grupo-item ${esActivo ? 'activo' : ''}" 
                      onclick="setGrupo('${nombre}')" 
@@ -530,32 +561,23 @@ async function inicializarAplicacion() {
     // 1. Cargar el estado guardado de la selección y grupos
     cargarEstado();
 
-    // 2. CARGA DE DATOS DESDE LA API (Render)
+    // 2. CARGA DE DATOS ASÍNCRONA DESDE LA API (Render)
     try {
         const response = await fetch(RENDER_API_URL);
-        if (!response.ok) {
+        if (response.ok) {
+            datos = await response.json();
+        } else {
+            // Si el servidor responde con error, datos queda vacío.
             datos = [];
-            throw new Error('Error al cargar datos desde la API: ' + response.statusText);
+            throw new Error('API respondió con error: ' + response.statusText);
         }
-        datos = await response.json();
     } catch (e) {
+        // Esto captura fallos de conexión (servidor caído o cold start muy largo)
         console.error("No se pudo conectar al servidor o cargar la fuente de datos.", e);
-        mostrarNotificacion("No se pudieron cargar los datos. Revisa si el servidor está activo.", 'error');
+        mostrarNotificacion("Error: No se pudo cargar la fuente de datos. Revisa la URL de Render.", 'error');
     }
 
-    // 3. Configuración inicial del DOM
-    const crearGrupoFlotante = document.getElementById("crear-grupo-flotante");
-    if (crearGrupoFlotante) {
-        crearGrupoFlotante.addEventListener("click", () => {
-            inputModalGrupo.value = "";
-            modalGrupo.style.display = "flex";
-            inputModalGrupo.focus();
-        });
-    }
-
-    inicializarConfirmacionModal();
-
-    // 4. Renderizado inicial
+    // 3. Renderizado INICIAL: ¡Se llama AQUÍ, después de que 'datos' está lleno!
     renderTablaInicial();
     setGrupo(grupoActivo);
 }
