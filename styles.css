@@ -17,7 +17,7 @@
     --color-acento-peligro: #ef4444;
     /* Rojo para quitar/eliminar */
     --color-acento-info: #f59e0b;
-    /* Amarillo/Naranja para títulos */
+    /* Amarillo/Naranja para títulos y Edición */
     --espacio-base: 10px;
 }
 
@@ -234,16 +234,12 @@ button:hover {
 #tabla-contenedor {
     /* --- REGLAS CLAVE PARA SCROLL --- */
     max-height: 55vh;
-    /* Ocupa el 55% de la altura de la ventana (ajusta este valor si es necesario) */
     overflow-y: auto;
-    /* Habilita el scroll vertical solo dentro de esta caja */
 
     /* --- ESTILOS ORIGINALES MANTENIDOS --- */
     flex-grow: 0;
-    /* Ya no debe crecer indefinidamente */
     margin-bottom: 20px;
     overflow-x: hidden;
-    /* Evita que la tabla se salga (scroll horizontal) */
     border-radius: 8px;
     background-color: var(--color-fondo-secundario);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -252,7 +248,6 @@ button:hover {
 #tabla {
     width: 100%;
     border-collapse: separate;
-    /* Para usar border-spacing/radius */
     border-spacing: 0;
 }
 
@@ -263,7 +258,6 @@ button:hover {
     padding: var(--espacio-base) 15px;
     text-align: left;
     position: sticky;
-    /* Fija la cabecera al hacer scroll en el contenedor */
     top: 0;
     z-index: 10;
 }
@@ -296,9 +290,7 @@ button:hover {
 #seleccionados-area {
     /* Altura Máxima y Scroll para la caja de seleccionados */
     max-height: 30vh;
-    /* Ocupa el 30% de la altura de la ventana. Ajusta si es necesario. */
     overflow-y: auto;
-    /* Habilita el scroll vertical */
 
     background-color: var(--color-fondo-secundario);
     padding: 20px;
@@ -339,6 +331,27 @@ button:hover {
 .etiqueta-asignada {
     color: white;
     font-weight: 500;
+}
+
+
+/* ------------------------------------------- */
+/* MODO EDICIÓN (NUEVOS ESTILOS)            */
+/* ------------------------------------------- */
+
+/* Indicador visual de que la celda es editable */
+.editable {
+    cursor: text;
+    /* Dibuja un borde de puntos para indicar que es editable */
+    border: 1px dashed var(--color-acento-info) !important;
+    padding: 9px 14px;
+    /* Ajuste para compensar el borde de 1px */
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+}
+
+.editable:hover {
+    /* Hace que el fondo se aclare un poco al pasar el ratón para confirmar que es clicable */
+    background-color: #353842 !important;
 }
 
 

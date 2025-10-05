@@ -40,11 +40,27 @@ let seleccionGeneral = []; // ALMACENA IDs de los elementos
 let elementoGrupos = {}; // LAS CLAVES SON IDs, guarda a qué grupos pertenece
 let accionConfirmarCallback = () => { };
 
+// NUEVA VARIABLE DE ESTADO para controlar la edición
+let modoEdicionActivo = false;
+
 
 // FUNCIÓN AUXILIAR: busca un objeto de datos por su ID
 function encontrarItemPorId(id) {
     const idNum = Number(id);
     return datos.find(item => item.id === idNum);
+}
+
+// ====================================================================
+// FUNCIÓN AUXILIAR: DEBOUNCE (Para optimizar la búsqueda)
+// ====================================================================
+function debounce(func, delay) {
+    let timeout;
+    return function () {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), delay);
+    };
 }
 
 
@@ -159,6 +175,30 @@ function inicializarConfirmacionModal() {
 // ====================================================================
 
 /**
+ * Función para activar/desactivar el modo de edición.
+ */
+window.toggleModoEdicion = function () {
+    modoEdicionActivo = !modoEdicionActivo;
+    const btn = document.getElementById("btn-modo-edicion");
+
+    if (modoEdicionActivo) {
+        btn.textContent = 'Bloquear Edición 🔓';
+        // Usar color de acento INFO (Amarillo/Naranja) para advertir
+        btn.style.backgroundColor = 'var(--color-acento-info)';
+        mostrarNotificacion("Modo Edición activado. ¡Puedes modificar la tabla!", 'info');
+    } else {
+        btn.textContent = 'Desbloquear Edición 🔒';
+        // Usar color de fondo por defecto
+        btn.style.backgroundColor = 'var(--color-fondo-secundario)';
+        mostrarNotificacion("Modo Edición desactivado.", 'exito');
+    }
+
+    // Vuelve a dibujar la tabla para aplicar/quitar el atributo contenteditable
+    renderTablaInicial();
+};
+
+
+/**
  * Añade o quita un elemento de la selección general (Sincronización de selección).
  */
 window.alternarSeleccionGeneral = function (id) {
@@ -197,7 +237,9 @@ window.setGrupo = function (nombre) {
 }
 
 window.crearGrupo = function () {
-    const inputElement = document.getElementById("input-modal-grupo") || nuevoGrupoInput;
+    const inputElement = document.getElementById("input-modal-grupo");
+    if (!inputElement) return;
+
     const nombre = inputElement.value.trim();
     if (nombre && !grupos.includes(nombre)) {
         grupos.push(nombre);
@@ -290,6 +332,9 @@ window.guardarEdicionDato = async function (id, campo, nuevoValor) {
     const item = encontrarItemPorId(id);
     nuevoValor = nuevoValor.trim();
 
+    // Si el modo edición no está activo, sal de la función inmediatamente
+    if (!modoEdicionActivo) return;
+
     if (!item || item[campo] === nuevoValor) return;
 
     // Actualizar localmente primero
@@ -321,42 +366,46 @@ window.guardarEdicionDato = async function (id, campo, nuevoValor) {
 }
 
 
-/**
- * Inicializa la tabla con los datos de la API. Celdas EDITABLES.
- * ESTA ES LA FUNCIÓN CLAVE QUE DIBUJA LOS DATOS DE LA API EN LA TABLA.
- */
+// En tu script.js, busca la PARTE 5, función renderTablaInicial
+
 function renderTablaInicial() {
     tbody.innerHTML = "";
     const filtro = busquedaInput.value.toLowerCase();
 
-    // Si no hay datos (porque el fetch falló o están vacíos), muestra un mensaje
     if (datos.length === 0) {
         tbody.innerHTML = '<tr><td colspan="3">No se encontraron datos. Intente recargar.</td></tr>';
         return;
     }
 
-    // Iterar sobre el array global 'datos' para renderizar las filas
+    const editableAttr = modoEdicionActivo ? 'contenteditable="true"' : '';
+    const editableClass = modoEdicionActivo ? ' editable' : '';
+
     datos.forEach(item => {
         const id = item.id;
-        // Asegurarse de que 'item' tiene los campos 'nombre' y 'direccion'
+
         const nombre = item.nombre || '';
+        // *** ESTO DEBE LEER SOLO item.direccion, que YA contiene la comuna ***
         const direccion = item.direccion || '';
 
+        // Ajustar el filtro
         const textoCompleto = `${nombre} ${direccion}`.toLowerCase();
 
         if (!filtro || textoCompleto.includes(filtro)) {
             const fila = document.createElement("tr");
             fila.dataset.id = id;
-            // Después (Sin contenteditable)
+
             fila.innerHTML = `
-    <td onblur="guardarEdicionDato(${id}, 'nombre', this.textContent)">
-        ${nombre}
-    </td>
-    <td onblur="guardarEdicionDato(${id}, 'direccion', this.textContent)">
-        ${direccion}
-    </td>
-    <td><button onclick="alternarSeleccionGeneral(${id})">Seleccionar</button></td>
-`;
+                <td ${editableAttr} class="nombre-celda${editableClass}" 
+                    onblur="guardarEdicionDato(${id}, 'nombre', this.textContent)">
+                    ${nombre}
+                </td>
+                <td ${editableAttr} class="direccion-celda${editableClass}" 
+                    onblur="guardarEdicionDato(${id}, 'direccion', this.textContent)">
+                    ${direccion}
+                </td>
+                <td><button onclick="alternarSeleccionGeneral(${id})">Seleccionar</button></td>
+            `;
+
             tbody.appendChild(fila);
         }
     });
@@ -553,7 +602,9 @@ window.confirmarCrearGrupo = function () {
     cerrarModalGrupo();
 }
 
-busquedaInput.addEventListener("input", renderTablaInicial);
+// Vinculación de búsqueda con debounce
+busquedaInput.addEventListener("input", debounce(renderTablaInicial, 300));
+
 
 /**
  * Carga los datos desde la API de Render y pone en marcha la aplicación.
@@ -581,6 +632,9 @@ async function inicializarAplicacion() {
     // 3. Renderizado INICIAL: ¡Se llama AQUÍ, después de que 'datos' está lleno!
     renderTablaInicial();
     setGrupo(grupoActivo);
+
+    // 4. Inicializa el modal de confirmación
+    inicializarConfirmacionModal();
 }
 
 // Inicialización de la aplicación al cargar el documento
