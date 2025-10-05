@@ -1,268 +1,466 @@
-/*======================================================
-  BASE Y TIPOGRAFÍA
-======================================================*/
+/* PALETA DE COLORES */
 :root {
-    --color-principal: #007bff;
-    /* Azul primario */
-    --color-secundario: #6c757d;
-    /* Gris secundario */
-    --color-exito: #28a745;
-    --color-peligro: #dc3545;
-    --color-fondo: #f8f9fa;
-    --color-blanco: #fff;
-    --color-borde: #dee2e6;
+    --color-fondo-principal: #1f2128;
+    /* Gris muy oscuro, casi negro */
+    --color-fondo-secundario: #282b33;
+    /* Fondo de contenedores (sidebar, secciones) */
+    --color-borde: #3c4049;
+    /* Borde sutil */
+    --color-texto-principal: #e0e0e0;
+    /* Blanco suave */
+    --color-texto-secundario: #9aa0a6;
+    /* Gris para contadores/placeholder */
+    --color-acento-principal: #6a82fb;
+    /* Azul/Violeta moderno para botones y foco */
+    --color-acento-secundario: #34d399;
+    /* Verde para éxito/copiar */
+    --color-acento-peligro: #ef4444;
+    /* Rojo para quitar/eliminar */
+    --color-acento-info: #f59e0b;
+    /* Amarillo/Naranja para títulos */
+    --espacio-base: 10px;
 }
+
+/* ------------------------------------------- */
+/* ESTILOS BASE Y MAQUETACIÓN        */
+/* ------------------------------------------- */
 
 body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: var(--color-fondo);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     display: flex;
-    /* Usamos Flexbox para el layout principal */
-}
-
-/*======================================================
-  LAYOUT PRINCIPAL (ASIDE y MAIN)
-======================================================*/
-
-/* Estilo para la barra lateral de Grupos */
-#sidebar {
-    width: 250px;
-    background-color: #343a40;
-    /* Fondo oscuro */
-    color: var(--color-blanco);
-    padding: 20px;
-    height: 100vh;
-    /* Ocupa toda la altura de la ventana */
-    position: sticky;
-    /* Fija la barra lateral */
-    top: 0;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    overflow-y: auto;
-    /* Permite scroll si hay muchos grupos */
-}
-
-#main-content {
-    flex-grow: 1;
-    /* Ocupa el espacio restante */
-    padding: 20px 40px;
-    max-width: 1200px;
-    margin: 0 auto;
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--color-fondo-principal);
+    color: var(--color-texto-principal);
+    font-size: 14px;
+    line-height: 1.5;
 }
 
 h2 {
-    color: #212529;
-    border-bottom: 2px solid var(--color-principal);
-    padding-bottom: 5px;
-    margin-top: 0;
+    color: var(--color-texto-principal);
+    font-size: 1.5em;
+    font-weight: 600;
+    margin-bottom: 20px;
+    border-left: 4px solid var(--color-acento-principal);
+    padding-left: var(--espacio-base);
 }
 
-/*======================================================
-  SOLUCIÓN DE SCROLL PARA TABLAS (Tu Requerimiento)
-======================================================*/
+hr {
+    border: none;
+    height: 1px;
+    background-color: var(--color-borde);
+    margin: 20px 0;
+}
 
-/* 1. Contenedor de la Tabla Principal (Datos Disponibles) */
-#tabla-contenedor {
-    /* Altura máxima fija para que el scroll se active dentro de esta caja */
-    max-height: 450px;
+/* ------------------------------------------- */
+/* SIDEBAR (GRUPOS)              */
+/* ------------------------------------------- */
 
-    /* CRUCIAL: Habilita el scroll vertical cuando el contenido se desborda */
-    overflow-y: auto;
+#sidebar {
+    width: 280px;
+    padding: 20px;
+    background-color: var(--color-fondo-secundario);
+    position: relative;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+}
 
-    /* Borde opcional para visualizar mejor la caja */
+/* Botón Flotante (+ CREAR GRUPO) */
+#crear-grupo-flotante {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background-color: var(--color-acento-secundario);
+    color: var(--color-fondo-principal);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+    transition: transform 0.2s ease, background-color 0.2s;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+#crear-grupo-flotante:hover {
+    background-color: var(--color-acento-secundario);
+    transform: scale(1.05) rotate(5deg);
+}
+
+/* Controles de Grupo */
+#grupo-botones {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.grupo-control {
+    display: flex;
+    align-items: center;
+    background-color: var(--color-fondo-principal);
+    border: 1px solid transparent;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    padding-right: 2px;
+    /* Espacio para botones de control */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.grupo-control:hover {
+    border-color: var(--color-acento-principal);
+}
+
+.grupo-btn {
+    flex-grow: 1;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--color-texto-principal);
+    padding: var(--espacio-base);
+    cursor: pointer;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.grupo-btn.activo {
+    background-color: var(--color-acento-principal);
+    color: var(--color-fondo-principal);
+    border-radius: 5px 0 0 5px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.grupo-btn.activo .contador {
+    color: var(--color-fondo-principal);
+    font-weight: bold;
+}
+
+.contador {
+    color: var(--color-texto-secundario);
+    margin-left: 5px;
+    font-size: 0.9em;
+    font-weight: normal;
+}
+
+/* Botones de Modificación (Lápiz y Basura) */
+.mod-btn {
+    background: none;
+    border: none;
+    color: var(--color-texto-secundario);
+    cursor: pointer;
+    padding: 8px 5px;
+    transition: color 0.2s;
+    font-size: 1.1em;
+}
+
+.mod-btn:hover {
+    color: var(--color-acento-principal);
+}
+
+.mod-btn:last-child:hover {
+    color: var(--color-acento-peligro);
+}
+
+.grupo-control input[type="text"] {
+    flex-grow: 1;
+    padding: var(--espacio-base);
+    background-color: var(--color-fondo-principal);
+    border: 1px solid var(--color-acento-principal);
+    color: var(--color-texto-principal);
+    border-radius: 6px;
+    margin: 5px;
+}
+
+
+/* ------------------------------------------- */
+/* CONTENIDO PRINCIPAL             */
+/* ------------------------------------------- */
+
+#main-content {
+    flex-grow: 1;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Input y Botones Globales (Crear Grupo Rápido y Búsqueda) */
+input[type="text"],
+button {
+    padding: var(--espacio-base);
+    border-radius: 6px;
     border: 1px solid var(--color-borde);
-    padding: 5px;
-    background-color: var(--color-blanco);
-    border-radius: 4px;
+    transition: all 0.2s ease;
+    font-size: 14px;
 }
 
-/* 2. Contenedor de Seleccionados y Agrupados */
-#seleccionados-area {
-    /* La caja de seleccionados también tiene una altura fija y scroll */
-    max-height: 300px;
-    overflow-y: auto;
-
-    border: 1px solid var(--color-secundario);
-    padding: 15px;
-    margin-top: 20px;
-    background-color: #e9ecef;
-    /* Un color suave para distinguirlo */
-    border-radius: 4px;
+input[type="text"] {
+    background-color: var(--color-fondo-principal);
+    color: var(--color-texto-principal);
 }
 
-
-/*======================================================
-  TABLAS Y DATOS
-======================================================*/
-
-#busqueda {
-    width: 100%;
-    padding: 8px 10px;
-    margin-bottom: 15px;
-    /* Separa la barra de búsqueda de la tabla */
-    border: 1px solid var(--color-borde);
-    border-radius: 4px;
-    box-sizing: border-box;
+input[type="text"]:focus {
+    border-color: var(--color-acento-principal);
+    box-shadow: 0 0 0 2px rgba(106, 130, 251, 0.3);
+    outline: none;
 }
-
-#tabla {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-#tabla thead th {
-    background-color: var(--color-principal);
-    color: var(--color-blanco);
-    padding: 10px;
-    position: sticky;
-    /* Fija la cabecera al hacer scroll dentro del contenedor */
-    top: 0;
-    z-index: 10;
-}
-
-#tabla tbody tr {
-    border-bottom: 1px solid var(--color-borde);
-    transition: background-color 0.2s;
-}
-
-#tabla tbody tr:hover {
-    background-color: #f1f1f1;
-}
-
-#tabla td {
-    padding: 8px 10px;
-}
-
-/* Estilo para las celdas editables */
-#tabla td[contenteditable="true"] {
-    cursor: text;
-    border: 1px dashed transparent;
-    /* Borde al pasar el ratón */
-}
-
-#tabla td[contenteditable="true"]:hover {
-    border-color: var(--color-secundario);
-}
-
-/* Fila seleccionada (si tienes esa funcionalidad) */
-.fila-seleccionada {
-    background-color: #d1ecf1 !important;
-}
-
-/*======================================================
-  BOTONES
-======================================================*/
 
 button {
-    padding: 8px 15px;
-    border: none;
-    border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.2s;
-    font-weight: bold;
+    color: var(--color-texto-principal);
+    font-weight: 500;
+    background-color: var(--color-fondo-secundario);
 }
 
 button:hover {
     opacity: 0.9;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Botón principal */
-#tabla button,
-#seleccionados-area button {
-    background-color: var(--color-principal);
-    color: var(--color-blanco);
+/* Botones de acción específicos */
+#sidebar button:last-child {
+    background-color: var(--color-acento-principal);
+    color: var(--color-fondo-principal);
 }
 
-#tabla button:hover,
-#seleccionados-area button:hover {
-    background-color: #0056b3;
+#seleccionados-area button[onclick^="copiar"] {
+    background-color: var(--color-acento-secundario);
+    color: var(--color-fondo-principal);
 }
 
-/* Botón flotante de la barra lateral */
-#crear-grupo-flotante {
-    background-color: var(--color-exito);
-    color: var(--color-blanco);
-    font-size: 24px;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    position: fixed;
-    /* Fijo en la esquina de la barra lateral */
-    top: 10px;
-    left: 210px;
-    line-height: 1;
-    z-index: 20;
+/* ------------------------------------------- */
+/* TABLA DATOS (Modificado para Scroll Interno)*/
+/* ------------------------------------------- */
+
+#tabla-contenedor {
+    /* --- REGLAS CLAVE PARA SCROLL --- */
+    max-height: 55vh;
+    /* Ocupa el 55% de la altura de la ventana (ajusta este valor si es necesario) */
+    overflow-y: auto;
+    /* Habilita el scroll vertical solo dentro de esta caja */
+
+    /* --- ESTILOS ORIGINALES MANTENIDOS --- */
+    flex-grow: 0;
+    /* Ya no debe crecer indefinidamente */
+    margin-bottom: 20px;
+    overflow-x: hidden;
+    /* Evita que la tabla se salga (scroll horizontal) */
+    border-radius: 8px;
+    background-color: var(--color-fondo-secundario);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilos de botones de grupo en la sidebar */
-.grupo-boton {
-    display: block;
+#tabla {
     width: 100%;
-    margin-bottom: 8px;
-    background-color: #495057;
-    color: var(--color-blanco);
+    border-collapse: separate;
+    /* Para usar border-spacing/radius */
+    border-spacing: 0;
+}
+
+#tabla th {
+    background-color: var(--color-acento-principal);
+    color: var(--color-fondo-principal);
+    font-weight: 600;
+    padding: var(--espacio-base) 15px;
     text-align: left;
+    position: sticky;
+    /* Fija la cabecera al hacer scroll en el contenedor */
+    top: 0;
+    z-index: 10;
 }
 
-.grupo-boton.activo {
-    background-color: var(--color-principal);
+#tabla td {
+    border-bottom: 1px solid var(--color-borde);
+    padding: 10px 15px;
+    background-color: var(--color-fondo-principal);
 }
 
-/*======================================================
-  MODALES Y NOTIFICACIONES
-======================================================*/
+#tabla tbody tr:last-child td {
+    border-bottom: none;
+}
 
-/* Estilo base del modal */
-#modal-grupo,
-#modal-confirmacion {
+#tabla tbody tr:hover td {
+    background-color: #2e313a;
+}
+
+/* Botón Seleccionar/Quitar en la tabla */
+#tabla button {
+    font-size: 13px;
+    padding: 6px 10px;
+    transition: background-color 0.2s ease;
+}
+
+/* ------------------------------------------- */
+/* SECCIÓN SELECCIONADOS (Modificado para Scroll Interno)             */
+/* ------------------------------------------- */
+
+#seleccionados-area {
+    /* Altura Máxima y Scroll para la caja de seleccionados */
+    max-height: 30vh;
+    /* Ocupa el 30% de la altura de la ventana. Ajusta si es necesario. */
+    overflow-y: auto;
+    /* Habilita el scroll vertical */
+
+    background-color: var(--color-fondo-secundario);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 10px;
+}
+
+#seleccionados-area h2 {
+    border-left: none;
+    font-size: 1.3em;
+    padding-left: 0;
+}
+
+.grupo-titulo {
+    font-weight: bold;
+    color: var(--color-acento-principal);
+    margin-top: 20px;
+    margin-bottom: 8px;
+    padding-bottom: 3px;
+    border-bottom: 2px solid var(--color-borde);
+}
+
+.item-seleccionado {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--color-borde);
+    font-size: 13px;
+}
+
+.item-seleccionado:last-child {
+    border-bottom: none;
+}
+
+/* Estilo para las etiquetas de agrupación */
+.etiqueta-asignada {
+    color: white;
+    font-weight: 500;
+}
+
+
+/* ------------------------------------------- */
+/* MODAL                     */
+/* ------------------------------------------- */
+
+#modal-grupo {
+    /* Esta es la propiedad clave para ocultar el modal al inicio */
     display: none;
-    /* Oculto por defecto con JS */
+
     position: fixed;
-    z-index: 100;
+    z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
     overflow: auto;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
 }
 
-.modal-content,
-.modal-contenido {
-    background-color: var(--color-blanco);
-    margin: 15% auto;
+/* El resto de los estilos del modal... */
+.modal-content {
+    background-color: var(--color-fondo-secundario);
+    border: 1px solid var(--color-borde);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
     padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 400px;
+    /* Asegura un padding correcto */
     border-radius: 8px;
-    text-align: center;
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-.modal-botones button {
-    margin: 5px;
+/* ... y los estilos internos de los botones del modal */
+.modal-content div {
+    display: flex;
+    gap: var(--espacio-base);
 }
 
-/* Botones de confirmación y cancelar */
-.btn-peligro {
-    background-color: var(--color-peligro);
-    color: var(--color-blanco);
-}
+/* ------------------------------------------- */
+/* NOTIFICACIÓN INTERNA (TOAST)  */
+/* ------------------------------------------- */
 
-.btn-secundario {
-    background-color: var(--color-secundario);
-    color: var(--color-blanco);
-}
-
-/* Toast (notificación) */
 #notificacion-toast {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background-color: rgba(50, 50, 50, 0.9);
-    color: var(--color-blanco);
-    padding: 10px 20px;
-    border-radius: 4px;
+    background-color: var(--color-fondo-secundario);
+    /* Fondo oscuro */
+    color: var(--color-texto-principal);
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 2000;
+    /* Asegura que esté por encima de todo */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    /* Propiedades de animación */
+    opacity: 0;
+    transform: translateY(100%);
+    transition: opacity 0.4s ease-in-out, transform 0.4s ease-in-out;
+}
+
+.toast-visible {
+    opacity: 1 !important;
+    transform: translateY(0%) !important;
+}
+
+#toast-icono {
+    font-size: 1.5em;
+    line-height: 1;
+}
+
+/* Estilos para el nuevo modal de confirmación (si no existen) */
+#modal-confirmacion {
+    /* Esconder por defecto */
+    display: none;
+    position: fixed;
     z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7);
+    justify-content: center;
+    align-items: center;
+}
+
+#modal-confirmacion .modal-contenido {
+    background-color: var(--color-fondo-principal);
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+
+.modal-botones {
+    margin-top: 20px;
+    display: flex;
+    justify-content: space-around;
+    gap: 10px;
+}
+
+/* Estilos de botones (Asegúrate que coincidan con tu tema) */
+#btn-cancelar {
+    background-color: var(--color-texto-secundario);
+    /* Gris o neutro */
+    color: white;
+    flex-grow: 1;
+}
+
+#btn-confirmar {
+    background-color: var(--color-acento-peligro);
+    /* Rojo para confirmar peligro */
+    color: white;
+    flex-grow: 1;
 }

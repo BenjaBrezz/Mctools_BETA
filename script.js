@@ -347,17 +347,16 @@ function renderTablaInicial() {
         if (!filtro || textoCompleto.includes(filtro)) {
             const fila = document.createElement("tr");
             fila.dataset.id = id;
+            // Después (Sin contenteditable)
             fila.innerHTML = `
-                <td contenteditable="true" 
-                    onblur="guardarEdicionDato(${id}, 'nombre', this.textContent)">
-                    ${nombre}
-                </td>
-                <td contenteditable="true" 
-                    onblur="guardarEdicionDato(${id}, 'direccion', this.textContent)">
-                    ${direccion}
-                </td>
-                <td><button onclick="alternarSeleccionGeneral(${id})">Seleccionar</button></td>
-            `;
+    <td onblur="guardarEdicionDato(${id}, 'nombre', this.textContent)">
+        ${nombre}
+    </td>
+    <td onblur="guardarEdicionDato(${id}, 'direccion', this.textContent)">
+        ${direccion}
+    </td>
+    <td><button onclick="alternarSeleccionGeneral(${id})">Seleccionar</button></td>
+`;
             tbody.appendChild(fila);
         }
     });
@@ -465,7 +464,7 @@ function renderGrupos() {
 
         if (esEditando) {
             return `
-                <div class="grupo-item grupo-editando">
+                <div class="grupo-control grupo-editando">
                     <input type="text" id="input-renombrar" value="${nombre}">
                     <button onclick="renombrarGrupo('${nombre}', document.getElementById('input-renombrar').value)" title="Guardar">✔</button>
                     <button onclick="grupoEditando=null; renderGrupos()" title="Cancelar">✖</button>
@@ -473,17 +472,20 @@ function renderGrupos() {
             `;
         } else {
             return `
-                <div class="grupo-item ${esActivo ? 'activo' : ''}" 
-                     onclick="setGrupo('${nombre}')" 
-                     draggable="true" 
-                     ondragstart="event.dataTransfer.setData('text/plain', '${nombre}')"
-                     ondragover="event.preventDefault()"
-                     ondrop="reordenarGrupos(event.dataTransfer.getData('text/plain'), '${nombre}')">
+                <div class="grupo-control ${esActivo ? 'activo' : ''}" 
+                    draggable="true" 
+                    ondragstart="event.dataTransfer.setData('text/plain', '${nombre}')"
+                    ondragover="event.preventDefault()"
+                    ondrop="reordenarGrupos(event.dataTransfer.getData('text/plain'), '${nombre}')">
                     
-                    <span>${nombre}</span>
+                    <button class="grupo-btn ${esActivo ? 'activo' : ''}" 
+                        onclick="setGrupo('${nombre}')">
+                        <span>${nombre}</span>
+                    </button>
+                    
                     <div class="acciones-grupo">
-                        <button onclick="event.stopPropagation(); grupoEditando='${nombre}'; renderGrupos()" title="Renombrar">✏️</button>
-                        <button onclick="event.stopPropagation(); eliminarGrupo('${nombre}')" title="Eliminar">🗑️</button>
+                        <button class="mod-btn" onclick="event.stopPropagation(); grupoEditando='${nombre}'; renderGrupos()" title="Renombrar">✏️</button>
+                        <button class="mod-btn" onclick="event.stopPropagation(); eliminarGrupo('${nombre}')" title="Eliminar">🗑️</button>
                     </div>
                 </div>
             `;
