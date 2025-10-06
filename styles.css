@@ -333,28 +333,6 @@ button:hover {
     font-weight: 500;
 }
 
-
-/* ------------------------------------------- */
-/* MODO EDICIÓN (NUEVOS ESTILOS)            */
-/* ------------------------------------------- */
-
-/* Indicador visual de que la celda es editable */
-.editable {
-    cursor: text;
-    /* Dibuja un borde de puntos para indicar que es editable */
-    border: 1px dashed var(--color-acento-info) !important;
-    padding: 9px 14px;
-    /* Ajuste para compensar el borde de 1px */
-    border-radius: 3px;
-    transition: background-color 0.2s ease;
-}
-
-.editable:hover {
-    /* Hace que el fondo se aclare un poco al pasar el ratón para confirmar que es clicable */
-    background-color: #353842 !important;
-}
-
-
 /* ------------------------------------------- */
 /* MODAL                     */
 /* ------------------------------------------- */

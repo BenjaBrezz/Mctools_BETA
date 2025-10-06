@@ -12,12 +12,11 @@ const RENDER_API_URL = "https://mctools-beta-1.onrender.com/api/datos";
 let datos = [];
 
 // Elementos del DOM
-const tbody = document.querySelector("#tabla tbody");
+const tbody = document.querySelector("#tabla-tbody");
 const seleccionadosDiv = document.getElementById("seleccionados");
 const busquedaInput = document.getElementById("busqueda");
 const modalGrupo = document.getElementById("modal-grupo");
 const inputModalGrupo = document.getElementById("input-modal-grupo");
-const nuevoGrupoInput = document.getElementById("nuevo-grupo"); // Asegúrate de que este ID exista en tu HTML
 
 // REFERENCIAS PARA EL TOAST DE NOTIFICACIÓN
 const notificacionToast = document.getElementById("notificacion-toast");
@@ -39,9 +38,6 @@ let grupoEditando = null;
 let seleccionGeneral = []; // ALMACENA IDs de los elementos
 let elementoGrupos = {}; // LAS CLAVES SON IDs, guarda a qué grupos pertenece
 let accionConfirmarCallback = () => { };
-
-// NUEVA VARIABLE DE ESTADO para controlar la edición
-let modoEdicionActivo = false;
 
 
 // FUNCIÓN AUXILIAR: busca un objeto de datos por su ID
@@ -171,32 +167,8 @@ function inicializarConfirmacionModal() {
 
 
 // ====================================================================
-// PARTE 3: GESTIÓN DE SELECCIÓN (TABLA)
+// PARTE 3: GESTIÓN DE SELECCIÓN (TABLA) - SIN MODO EDICIÓN
 // ====================================================================
-
-/**
- * Función para activar/desactivar el modo de edición.
- */
-window.toggleModoEdicion = function () {
-    modoEdicionActivo = !modoEdicionActivo;
-    const btn = document.getElementById("btn-modo-edicion");
-
-    if (modoEdicionActivo) {
-        btn.textContent = 'Bloquear Edición 🔓';
-        // Usar color de acento INFO (Amarillo/Naranja) para advertir
-        btn.style.backgroundColor = 'var(--color-acento-info)';
-        mostrarNotificacion("Modo Edición activado. ¡Puedes modificar la tabla!", 'info');
-    } else {
-        btn.textContent = 'Desbloquear Edición 🔒';
-        // Usar color de fondo por defecto
-        btn.style.backgroundColor = 'var(--color-fondo-secundario)';
-        mostrarNotificacion("Modo Edición desactivado.", 'exito');
-    }
-
-    // Vuelve a dibujar la tabla para aplicar/quitar el atributo contenteditable
-    renderTablaInicial();
-};
-
 
 /**
  * Añade o quita un elemento de la selección general (Sincronización de selección).
@@ -211,12 +183,18 @@ window.alternarSeleccionGeneral = function (id) {
 
         if (!elementoGrupos[idStr]) {
             elementoGrupos[idStr] = [grupoActivo];
+        } else if (!elementoGrupos[idStr].includes(grupoActivo)) {
+            elementoGrupos[idStr].push(grupoActivo);
         }
 
     } else {
         // Quitar elemento
-        seleccionGeneral.splice(itemIdIndex, 1);
-        if (elementoGrupos[idStr]) {
+        // Si el elemento pertenece a más de un grupo, solo quitamos la etiqueta del grupo activo.
+        if (elementoGrupos[idStr] && elementoGrupos[idStr].length > 1) {
+            elementoGrupos[idStr] = elementoGrupos[idStr].filter(g => g !== grupoActivo);
+        } else {
+            // Si solo pertenece al grupo activo, lo eliminamos de la selección general
+            seleccionGeneral.splice(itemIdIndex, 1);
             delete elementoGrupos[idStr];
         }
     }
@@ -281,9 +259,17 @@ window.eliminarGrupo = function (nombre) {
             grupos = grupos.filter(g => g !== nombre);
 
             for (const id in elementoGrupos) {
+                // Quitar la referencia al grupo eliminado
                 elementoGrupos[id] = elementoGrupos[id].filter(tag => tag !== nombre);
+
+                // Si el elemento queda sin grupos asignados, lo quitamos de seleccionGeneral
                 if (elementoGrupos[id].length === 0) {
-                    elementoGrupos[id].push(grupos[0]);
+                    const idNum = parseInt(id);
+                    const index = seleccionGeneral.indexOf(idNum);
+                    if (index > -1) {
+                        seleccionGeneral.splice(index, 1);
+                    }
+                    delete elementoGrupos[id];
                 }
             }
 
@@ -312,7 +298,7 @@ window.reordenarGrupos = function (origen, destino) {
 
 
 // ====================================================================
-// PARTE 5: RENDERIZADO DE UI Y LÓGICA DE API (Guardado)
+// PARTE 5: RENDERIZADO DE UI
 // ====================================================================
 
 /**
@@ -321,52 +307,10 @@ window.reordenarGrupos = function (origen, destino) {
 function actualizarVistas() {
     renderGrupos();
     renderSeleccionados();
-    renderTablaBotones();
+    renderTablaInicial(); // Llama a renderTablaInicial para actualizar el botón
     guardarEstado();
 }
 
-/**
- * Envía los cambios de edición al servidor de Render y actualiza la lista local.
- */
-window.guardarEdicionDato = async function (id, campo, nuevoValor) {
-    const item = encontrarItemPorId(id);
-    nuevoValor = nuevoValor.trim();
-
-    // Si el modo edición no está activo, sal de la función inmediatamente
-    if (!modoEdicionActivo) return;
-
-    if (!item || item[campo] === nuevoValor) return;
-
-    // Actualizar localmente primero
-    item[campo] = nuevoValor;
-
-    try {
-        const response = await fetch(`${RENDER_API_URL}/${id}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                campo: campo,
-                valor: nuevoValor
-            })
-        });
-
-        if (!response.ok) {
-            throw new Error(`Error ${response.status}: El servidor no pudo guardar el cambio.`);
-        }
-
-        // El servidor respondió OK: cambio permanente y sincronizado.
-        mostrarNotificacion(`Edición de ${campo} guardada permanentemente.`, 'exito');
-
-    } catch (error) {
-        console.error("Error al guardar en el servidor:", error);
-        mostrarNotificacion("Error al guardar en la nube. ¡Revisa la conexión!", 'error');
-    }
-}
-
-
-// En tu script.js, busca la PARTE 5, función renderTablaInicial
 
 function renderTablaInicial() {
     tbody.innerHTML = "";
@@ -377,15 +321,14 @@ function renderTablaInicial() {
         return;
     }
 
-    const editableAttr = modoEdicionActivo ? 'contenteditable="true"' : '';
-    const editableClass = modoEdicionActivo ? ' editable' : '';
-
     datos.forEach(item => {
         const id = item.id;
 
         const nombre = item.nombre || '';
-        // *** ESTO DEBE LEER SOLO item.direccion, que YA contiene la comuna ***
         const direccion = item.direccion || '';
+
+        // Determinar si el elemento está en el grupo activo
+        const estaEnGrupoActivo = elementoGrupos[String(id)] && elementoGrupos[String(id)].includes(grupoActivo);
 
         // Ajustar el filtro
         const textoCompleto = `${nombre} ${direccion}`.toLowerCase();
@@ -393,114 +336,84 @@ function renderTablaInicial() {
         if (!filtro || textoCompleto.includes(filtro)) {
             const fila = document.createElement("tr");
             fila.dataset.id = id;
+            // Destacar si está seleccionado en el grupo activo
+            fila.style.backgroundColor = estaEnGrupoActivo ? 'rgba(106, 130, 251, 0.1)' : '';
 
             fila.innerHTML = `
-                <td ${editableAttr} class="nombre-celda${editableClass}" 
-                    onblur="guardarEdicionDato(${id}, 'nombre', this.textContent)">
-                    ${nombre}
+                <td>${nombre}</td>
+                <td>${direccion}</td>
+                <td>
+                    <button onclick="alternarSeleccionGeneral(${id})" 
+                            style="background-color: ${estaEnGrupoActivo ? 'var(--color-acento-peligro)' : 'var(--color-acento-principal)'};">
+                        ${estaEnGrupoActivo ? 'Quitar' : 'Seleccionar'}
+                    </button>
                 </td>
-                <td ${editableAttr} class="direccion-celda${editableClass}" 
-                    onblur="guardarEdicionDato(${id}, 'direccion', this.textContent)">
-                    ${direccion}
-                </td>
-                <td><button onclick="alternarSeleccionGeneral(${id})">Seleccionar</button></td>
             `;
 
             tbody.appendChild(fila);
         }
     });
-
-    renderTablaBotones();
 }
 
-/**
- * Renderiza los botones Seleccionar/Quitar
- */
-function renderTablaBotones() {
-    const filas = tbody.querySelectorAll("tr");
-
-    filas.forEach(fila => {
-        const id = parseInt(fila.dataset.id);
-        const boton = fila.querySelector("button");
-
-        const estaSeleccionado = seleccionGeneral.includes(id);
-
-        if (estaSeleccionado) {
-            boton.textContent = 'Quitar';
-            boton.style.backgroundColor = 'var(--color-acento-peligro)';
-        } else {
-            boton.textContent = 'Seleccionar';
-            boton.style.backgroundColor = 'var(--color-acento-principal)';
-        }
-    });
-}
 
 function renderSeleccionados() {
     seleccionadosDiv.innerHTML = "";
-    const elementosSeleccionados = {};
 
-    grupos.forEach(nombre => {
-        elementosSeleccionados[nombre] = [];
+    const elementosSeleccionadosEnGrupo = seleccionGeneral.filter(id => {
+        return elementoGrupos[String(id)] && elementoGrupos[String(id)].includes(grupoActivo);
+    }).map(id => encontrarItemPorId(id));
+
+    if (elementosSeleccionadosEnGrupo.length === 0) {
+        seleccionadosDiv.innerHTML = `<p class='mensaje-estado'>Aún no hay elementos seleccionados en el grupo "${grupoActivo}".</p>`;
+        return;
+    }
+
+    // Agrupar los seleccionados por otros grupos a los que pertenecen
+    let agrupadoPorOtrosGrupos = {};
+
+    elementosSeleccionadosEnGrupo.forEach(item => {
+        const idStr = String(item.id);
+        // Obtener los grupos asignados que NO son el grupo activo
+        const otrosGrupos = (elementoGrupos[idStr] || []).filter(g => g !== grupoActivo);
+        const clave = otrosGrupos.length > 0 ? otrosGrupos.sort().join(', ') : 'Otros';
+
+        if (!agrupadoPorOtrosGrupos[clave]) {
+            agrupadoPorOtrosGrupos[clave] = [];
+        }
+        agrupadoPorOtrosGrupos[clave].push(item);
     });
 
-    seleccionGeneral.forEach(idEnDatos => {
-        const idStr = String(idEnDatos);
-        const item = encontrarItemPorId(idEnDatos);
+    Object.keys(agrupadoPorOtrosGrupos).sort().forEach(claveGrupo => {
+        const titulo = document.createElement("div");
+        titulo.className = "grupo-titulo";
+        titulo.innerText = claveGrupo === 'Otros' ? 'No Asignado a otros grupos' : `Grupos Adicionales: ${claveGrupo}`;
+        seleccionadosDiv.appendChild(titulo);
 
-        if (!item) return;
+        agrupadoPorOtrosGrupos[claveGrupo].forEach(item => {
+            const div = document.createElement("div");
+            div.className = "item-seleccionado";
+            div.dataset.id = item.id;
 
-        const gruposAsignados = elementoGrupos[idStr] || [grupoActivo];
-
-        gruposAsignados.forEach(grupo => {
-            if (elementosSeleccionados[grupo]) {
-                elementosSeleccionados[grupo].push({
-                    id: idEnDatos,
-                    item: item
-                });
-            }
+            div.innerHTML = `
+                <div style="display:flex; flex-direction: column; flex-grow: 1;">
+                    <span>${item.nombre} - ${item.direccion}</span>
+                </div>
+                
+                <button onclick="alternarSeleccionGeneral(${item.id})" style="
+                    background-color: var(--color-acento-peligro); 
+                    color: white; 
+                    border: none; 
+                    border-radius: 4px; 
+                    padding: 5px 10px;
+                    font-weight: bold;
+                    margin-left: 10px;
+                ">
+                    ❌
+                </button>
+            `;
+            seleccionadosDiv.appendChild(div);
         });
     });
-
-    let hayContenido = false;
-    grupos.forEach(grupo => {
-        if (elementosSeleccionados[grupo].length > 0) {
-            hayContenido = true;
-
-            const titulo = document.createElement("div");
-            titulo.className = "grupo-titulo";
-            titulo.innerText = grupo;
-            seleccionadosDiv.appendChild(titulo);
-
-            elementosSeleccionados[grupo].forEach(data => {
-                const div = document.createElement("div");
-                div.className = "item-seleccionado";
-                div.dataset.id = data.id;
-
-                div.innerHTML = `
-                    <div style="display:flex; flex-direction: column; flex-grow: 1;">
-                        <span>${data.item.nombre} - ${data.item.direccion}</span>
-                    </div>
-                    
-                    <button onclick="alternarSeleccionGeneral(${data.id})" style="
-                        background-color: var(--color-acento-peligro); 
-                        color: white; 
-                        border: none; 
-                        border-radius: 4px; 
-                        padding: 5px 10px;
-                        font-weight: bold;
-                        margin-left: 10px;
-                    ">
-                        ❌
-                    </button>
-                `;
-                seleccionadosDiv.appendChild(div);
-            });
-        }
-    });
-
-    if (!hayContenido) {
-        seleccionadosDiv.innerHTML = "<p class='mensaje-estado'>Aún no hay elementos seleccionados.</p>";
-    }
 }
 
 function renderGrupos() {
@@ -510,6 +423,12 @@ function renderGrupos() {
     grupoBotones.innerHTML = grupos.map(nombre => {
         const esActivo = nombre === grupoActivo;
         const esEditando = nombre === grupoEditando;
+
+        // Contar cuántos elementos de seleccionGeneral están en este grupo
+        const contador = seleccionGeneral.filter(id => {
+            return elementoGrupos[String(id)] && elementoGrupos[String(id)].includes(nombre);
+        }).length;
+
 
         if (esEditando) {
             return `
@@ -530,6 +449,7 @@ function renderGrupos() {
                     <button class="grupo-btn ${esActivo ? 'activo' : ''}" 
                         onclick="setGrupo('${nombre}')">
                         <span>${nombre}</span>
+                        <span class="contador">${contador}</span>
                     </button>
                     
                     <div class="acciones-grupo">
@@ -544,43 +464,28 @@ function renderGrupos() {
 
 
 window.copiarAlPortapapeles = function () {
-    if (seleccionGeneral.length === 0) {
-        mostrarNotificacion("No hay elementos seleccionados para copiar.", 'info');
+    // Solo copiamos los elementos seleccionados en el grupo activo
+    const elementosACopiar = seleccionGeneral.filter(id => {
+        return elementoGrupos[String(id)] && elementoGrupos[String(id)].includes(grupoActivo);
+    });
+
+    if (elementosACopiar.length === 0) {
+        mostrarNotificacion("No hay elementos seleccionados para copiar en el grupo activo.", 'info');
         return;
     }
 
     let textoFinal = "";
-    let contenidoPorGrupo = {};
 
-    seleccionGeneral.forEach(id => {
-        const idStr = String(id);
+    elementosACopiar.forEach(id => {
         const item = encontrarItemPorId(id);
-
-        if (!item) return;
-
-        const gruposAsignados = elementoGrupos[idStr] || [grupoActivo];
-        const linea = `${item.nombre} - ${item.direccion}`;
-
-        gruposAsignados.forEach(grupo => {
-            if (!contenidoPorGrupo[grupo]) {
-                contenidoPorGrupo[grupo] = [];
-            }
-            if (!contenidoPorGrupo[grupo].includes(linea)) {
-                contenidoPorGrupo[grupo].push(linea);
-            }
-        });
-    });
-
-    let keys = Object.keys(contenidoPorGrupo).sort((a, b) => grupos.indexOf(a) - grupos.indexOf(b));
-
-    keys.forEach(grupo => {
-        textoFinal += `\n--- ${grupo} ---\n`;
-        textoFinal += contenidoPorGrupo[grupo].join('\n');
-        textoFinal += '\n';
+        if (item) {
+            // Formato: Nombre - Dirección, Comuna
+            textoFinal += `${item.nombre} - ${item.direccion}\n`;
+        }
     });
 
     navigator.clipboard.writeText(textoFinal.trim())
-        .then(() => mostrarNotificacion(`Elementos agrupados copiados al portapapeles.`, 'exito'))
+        .then(() => mostrarNotificacion(`¡${elementosACopiar.length} elementos copiados de "${grupoActivo}"!`, 'exito'))
         .catch(err => mostrarNotificacion("Error al copiar al portapapeles.", 'error'));
 }
 
@@ -619,17 +524,15 @@ async function inicializarAplicacion() {
         if (response.ok) {
             datos = await response.json();
         } else {
-            // Si el servidor responde con error, datos queda vacío.
             datos = [];
             throw new Error('API respondió con error: ' + response.statusText);
         }
     } catch (e) {
-        // Esto captura fallos de conexión (servidor caído o cold start muy largo)
         console.error("No se pudo conectar al servidor o cargar la fuente de datos.", e);
         mostrarNotificacion("Error: No se pudo cargar la fuente de datos. Revisa la URL de Render.", 'error');
     }
 
-    // 3. Renderizado INICIAL: ¡Se llama AQUÍ, después de que 'datos' está lleno!
+    // 3. Renderizado INICIAL
     renderTablaInicial();
     setGrupo(grupoActivo);
 
